@@ -20,15 +20,22 @@ without checkpointing.
 """
 
 import functools
+import os
 
 import pytest
 import torch
 
-mcore_random = pytest.importorskip("megatron.core.tensor_parallel.random")
+if os.environ.get("VERL_REQUIRE_MCORE_TESTS"):
+    import megatron.core.tensor_parallel.random as mcore_random
+else:
+    mcore_random = pytest.importorskip("megatron.core.tensor_parallel.random")
 
 from verl.models.mcore.patch import apply_patch_megatron_recomputation_backward  # noqa: E402
 
-pytestmark = pytest.mark.skipif(not torch.cuda.is_available(), reason="the patched backward is CUDA only")
+pytestmark = pytest.mark.skipif(
+    not torch.cuda.is_available() and not os.environ.get("VERL_REQUIRE_MCORE_TESTS"),
+    reason="the patched backward is CUDA only",
+)
 
 N_SEG, T, H, E = 4, 256, 256, 8
 ALL_SEGMENTS = tuple(range(N_SEG))
